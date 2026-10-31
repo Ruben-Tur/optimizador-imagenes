@@ -1,0 +1,16 @@
+# Compilación
+/target
+**/*.rs.bk
+
+# Resultados de probar la herramienta dentro del repositorio
+/optimizadas/
+/fotos/
+
+# Variables locales (la herramienta no usa ninguna, pero por si acaso)
+.env
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Cargo.lock NO se ignora: es un binario y el lock fija las versiones exactas.

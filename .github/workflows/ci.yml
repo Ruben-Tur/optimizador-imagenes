@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  estilo:
+    name: Formato y Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Formato (cargo fmt)
+        run: cargo fmt --all -- --check
+      - name: Clippy sin avisos
+        run: cargo clippy --all-targets -- -D warnings
+
+  pruebas:
+    name: Pruebas y binario (${{ matrix.sistema }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - sistema: ubuntu-latest
+            binario: afinar
+          - sistema: windows-latest
+            binario: afinar.exe
+    runs-on: ${{ matrix.sistema }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Pruebas
+        run: cargo test
+      - name: Compilación de publicación
+        run: cargo build --release
+      - name: Subir el binario
+        uses: actions/upload-artifact@v7
+        with:
+          name: afinar-${{ runner.os }}
+          path: target/release/${{ matrix.binario }}
+          if-no-files-found: error
+      # Mientras Cargo.lock no esté en el repositorio, se guarda el que
+      # genera CI para poder versionarlo (ver «Compilar» en el README).
+      - name: Subir Cargo.lock
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Cargo.lock
+          path: Cargo.lock
+
+  auditoria:
+    name: Auditoría de dependencias (cargo audit)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Generar Cargo.lock si aún no está versionado
+        run: test -f Cargo.lock || cargo generate-lockfile
+      - uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,42 @@
+[package]
+name = "afinar"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.88"
+description = "Convierte carpetas enteras de imágenes a WebP y AVIF en paralelo."
+authors = ["Rubén Tur"]
+repository = "https://github.com/Ruben-Tur/optimizador-imagenes"
+readme = "README.md"
+keywords = ["webp", "avif", "imagenes", "cli", "optimizacion"]
+categories = ["command-line-utilities", "multimedia::images"]
+publish = false
+
+[dependencies]
+anstream = "1.0.0"
+anstyle = "1.0.14"
+anyhow = "1.0.104"
+clap = { version = "4.6.7", features = ["derive"] }
+# Sin las funciones por defecto: solo los formatos que se leen (JPEG, PNG,
+# WebP) y el codificador AVIF (ravif + rav1e en Rust puro, sin nasm).
+image = { version = "0.25.10", default-features = false, features = ["avif", "jpeg", "png", "webp"] }
+rayon = "1.12.0"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+thiserror = "2.0.21"
+walkdir = "2.5.0"
+# WebP con pérdida a través de libwebp, que se compila desde el código
+# fuente incluido con `cc`.
+webp = { version = "0.3.1", default-features = false }
+
+[dev-dependencies]
+tempfile = "3.27.0"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
+
+# Las dependencias se optimizan también al probar: decodificar y codificar
+# imágenes sin optimizar es lentísimo.
+[profile.dev.package."*"]
+opt-level = 3
