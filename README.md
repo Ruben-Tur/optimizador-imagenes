@@ -172,7 +172,7 @@ cargo clippy --all-targets -- -D warnings
 
 - El perfil de publicación usa LTO y quita los símbolos, así que el binario es pequeño. En el perfil de desarrollo las dependencias se compilan optimizadas (`[profile.dev.package."*"]`), porque decodificar y codificar imágenes sin optimizar es muy lento y las pruebas tardarían minutos.
 - No hace falta `nasm`: el codificador AVIF se compila en Rust puro. Es algo más lento que con ensamblador, pero no añade dependencias del sistema.
-- **Cargo.lock**: al ser un programa (no una biblioteca), el `Cargo.lock` se versiona para que todas las compilaciones usen exactamente las mismas versiones. Este proyecto se escribió en un equipo donde no se podía compilar, así que el primer lock lo genera CI: descarga el artefacto `Cargo.lock` de la primera ejecución correcta de **Actions** (o ejecuta `cargo generate-lockfile` en cualquier equipo con Rust), cópialo a la raíz y súbelo. A partir de ahí conviene añadir `--locked` a los comandos de CI.
+- **Cargo.lock**: al ser un programa (no una biblioteca), el `Cargo.lock` se versiona para que todas las compilaciones usen exactamente las mismas versiones, y CI compila con `--locked`. Para actualizar dependencias: `cargo update` y subir el lock nuevo.
 
 ## Seguridad
 
