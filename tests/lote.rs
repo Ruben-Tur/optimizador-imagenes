@@ -212,6 +212,25 @@ fn dos_originales_con_el_mismo_resultado_se_avisan() {
 }
 
 #[test]
+fn rutas_con_tildes_enes_y_espacios() {
+    let (dir, entrada, _) = preparar();
+    let carpeta = entrada.join("año 2025");
+    fs::create_dir(&carpeta).unwrap();
+    crear_imagen(&carpeta.join("ñandú café.png"), 64, 48);
+    let salida = dir.path().join("imágenes optimizadas");
+    let mut opciones = opciones_base(&entrada, &salida);
+    opciones.formatos = vec![Formato::Webp];
+
+    let informe = convertir(&opciones);
+
+    assert_eq!(informe.cuenta().convertidas, 1);
+    let esperada = Path::new("año 2025").join("ñandú café.png");
+    assert_eq!(informe.resultados[0].relativa, esperada);
+    let webp = salida.join("año 2025").join("ñandú café.webp");
+    assert_eq!(medidas_webp(&webp), (64, 48));
+}
+
+#[test]
 fn conserva_la_transparencia() {
     let (_dir, entrada, salida) = preparar();
     let mut logo = RgbaImage::from_pixel(64, 64, Rgba([240, 165, 143, 255]));

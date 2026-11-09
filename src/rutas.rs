@@ -89,11 +89,18 @@ pub fn validar_carpetas(entrada: &Path, salida: &Path) -> anyhow::Result<Carpeta
 
 /// Ruta absoluta y sin enlaces simbólicos aunque todavía no exista: se
 /// resuelve el tramo que ya existe y se le añade el resto.
+///
+/// Si el tramo que existe es un archivo, se rechaza aquí: si no, cada
+/// imagen fallaría por separado al crear su carpeta.
 fn absoluta(ruta: &Path) -> anyhow::Result<PathBuf> {
     let completa = path::absolute(ruta).context("ruta de salida no válida")?;
     for ancestro in completa.ancestors() {
         if !ancestro.exists() {
             continue;
+        }
+        if !ancestro.is_dir() {
+            let archivo = ancestro.display();
+            bail!("la salida no es una carpeta: «{archivo}» es un archivo");
         }
         let resto = completa.strip_prefix(ancestro)?;
         if !resto.as_os_str().is_empty() && !es_relativa_segura(resto) {
@@ -339,6 +346,17 @@ mod tests {
         assert_eq!(carpetas.excluir, Some(PathBuf::from("web")));
         let fuera = validar_carpetas(&entrada, &dir.path().join("web")).unwrap();
         assert_eq!(fuera.excluir, None);
+    }
+
+    #[test]
+    fn la_salida_no_puede_ser_un_archivo() {
+        let dir = TempDir::new().unwrap();
+        let entrada = dir.path().join("fotos");
+        fs::create_dir(&entrada).unwrap();
+        let archivo = dir.path().join("notas.txt");
+        fs::write(&archivo, b"x").unwrap();
+        assert!(validar_carpetas(&entrada, &archivo).is_err());
+        assert!(validar_carpetas(&entrada, &archivo.join("web")).is_err());
     }
 
     #[test]

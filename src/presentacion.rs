@@ -104,9 +104,17 @@ pub fn ajustar(texto: &str, ancho: usize) -> String {
 pub fn seguro(texto: &str) -> String {
     let mut limpio = String::with_capacity(texto.len());
     for c in texto.chars() {
-        limpio.push(if c.is_control() { '?' } else { c });
+        let peligroso = c.is_control() || es_bidi(c);
+        limpio.push(if peligroso { '?' } else { c });
     }
     limpio
+}
+
+/// Marcas de dirección del texto (U+202A–U+202E y U+2066–U+2069). No son de
+/// control, pero dan la vuelta a lo que sigue y pueden disfrazar un nombre:
+/// `foto` + U+202E + `gpj.exe` se vería como `fotoexe.jpg`.
+fn es_bidi(c: char) -> bool {
+    matches!(c, '\u{202A}'..='\u{202E}' | '\u{2066}'..='\u{2069}')
 }
 
 /// «1 imagen», «3 imágenes».
@@ -167,6 +175,8 @@ mod tests {
     fn seguro_neutraliza_secuencias_de_escape() {
         assert_eq!(seguro("foto\u{1b}[31m.jpg"), "foto?[31m.jpg");
         assert_eq!(seguro("año-2025.png"), "año-2025.png");
+        assert_eq!(seguro("foto\u{202E}gpj.exe"), "foto?gpj.exe");
+        assert_eq!(seguro("a\u{2066}b\u{2069}"), "a?b?");
     }
 
     #[test]

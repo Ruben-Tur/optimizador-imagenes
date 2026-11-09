@@ -176,12 +176,12 @@ cargo clippy --all-targets -- -D warnings
 
 ## Seguridad
 
-- **Originales intocables**: la carpeta de salida no puede ser la de entrada ni una que la contenga (los `.webp` de entrada acabarían sobrescritos). Puede estar dentro de la de entrada; en ese caso se excluye del recorrido para no volver a leer los resultados.
+- **Originales intocables**: la carpeta de salida no puede ser un archivo, ni la de entrada, ni una que la contenga (los `.webp` de entrada acabarían sobrescritos). Puede estar dentro de la de entrada; en ese caso se excluye del recorrido para no volver a leer los resultados.
 - **Sin salir de las carpetas**: no se siguen enlaces simbólicos al recorrer la entrada, se rechaza cualquier ruta relativa con `..` o raíces, y antes de escribir se comprueba que la carpeta de destino, ya resuelta, sigue dentro de la de salida.
 - **Límites contra archivos hostiles** («bombas de descompresión»): como mucho 100 MB por archivo (se deja de leer al pasar el límite), 16 383 px de lado y 512 MiB de memoria por imagen, comprobados con la cabecera antes de decodificar.
 - **Escritura atómica**: cada resultado se escribe en un temporal oculto de la misma carpeta y se renombra al final, así un corte nunca deja un archivo a medias que la siguiente ejecución daría por bueno.
 - **Errores aislados**: un archivo dañado, sin permisos o que haga fallar a una biblioteca (incluido un pánico) se anota y el lote continúa.
-- **Terminal a salvo**: los nombres de archivo se muestran sin caracteres de control, para que un nombre malicioso no pueda inyectar secuencias de escape.
+- **Terminal a salvo**: los nombres de archivo se muestran sin caracteres de control ni marcas de dirección del texto (U+202E y similares), para que un nombre malicioso no pueda inyectar secuencias de escape ni disfrazar su extensión.
 - **Privacidad**: la herramienta no usa la red ni guarda datos propios. Los resultados no conservan los metadatos EXIF (incluida la ubicación GPS de las fotos del móvil); solo se aplica su orientación. Tampoco se copian los perfiles de color ICC, así que conviene que los originales estén en sRGB, que es lo habitual en la web.
 - CI ejecuta `cargo audit` (RustSec) para avisar de vulnerabilidades conocidas en las dependencias.
 
@@ -215,7 +215,7 @@ cargo test
 ```
 
 - **Unitarias** (en cada módulo): formato de tamaños (`3,80 MB`, nunca `1000 KB`), porcentajes y tiempos; cálculo de medidas al redimensionar (proporción, redondeo, nunca ampliar); rutas de salida, rutas relativas peligrosas, extensiones, exclusión de la salida, enlaces simbólicos (Linux), escritura atómica y escritura fuera de la salida; lectura de opciones, rangos no válidos, ayuda y versión; límites contra imágenes enormes y archivos dañados; alineación de las columnas del informe.
-- **Integración** (`tests/`): generan imágenes en una carpeta temporal, ejecutan la conversión y comprueban que los resultados existen, se pueden abrir, tienen las medidas esperadas, pesan menos que el PNG original y que este no cambia; que un archivo dañado se informa sin detener el lote; que se salta lo que está al día salvo con `--forzar`; que `--simular` no escribe; que se conserva la transparencia; y, ejecutando el binario, el JSON, los códigos de salida `0`, `1`, `2` y `3` y que no salen códigos de color cuando la salida no es una terminal.
+- **Integración** (`tests/`): generan imágenes en una carpeta temporal, ejecutan la conversión y comprueban que los resultados existen, se pueden abrir, tienen las medidas esperadas, pesan menos que el PNG original y que este no cambia; que un archivo dañado se informa sin detener el lote; que se salta lo que está al día salvo con `--forzar`; que `--simular` no escribe; que se conserva la transparencia; que funcionan las rutas con tildes, eñes y espacios; y, ejecutando el binario, el JSON, los códigos de salida `0`, `1` (también cuando la salida es un archivo), `2` y `3` y que no salen códigos de color cuando la salida no es una terminal.
 
 Todas se ejecutan en GitHub Actions en Linux y en Windows.
 

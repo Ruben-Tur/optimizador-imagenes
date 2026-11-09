@@ -93,6 +93,11 @@ fn opciones_no_validas_y_errores_generales() {
     let inexistente = afinar(dir.path(), &["no-existe"]);
     assert_eq!(inexistente.status.code(), Some(1));
     assert!(texto(&inexistente.stderr).contains("no se puede abrir"));
+
+    fs::write(dir.path().join("notas.txt"), b"x").unwrap();
+    let salida_archivo = afinar(dir.path(), &["fotos", "--salida", "notas.txt"]);
+    assert_eq!(salida_archivo.status.code(), Some(1));
+    assert!(texto(&salida_archivo.stderr).contains("no es una carpeta"));
 }
 
 #[test]
